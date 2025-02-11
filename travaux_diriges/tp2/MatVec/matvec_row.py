@@ -22,11 +22,14 @@ print(f"u = {u}")
 deb = time()
 # Produit matrice-vecteur
 local_v = local_A.dot(u)
-print(f"local_v = {local_v}")
+
 
 v = np.empty(dim,dtype=local_v.dtype)
 comm.Allgather(local_v,v)
+fin = time()
+
+print(f"local_v = {local_v}")
 print(f"v = {v}")
 
-fin = time()
+
 print(f"Temps du calcul est : {fin-deb}")

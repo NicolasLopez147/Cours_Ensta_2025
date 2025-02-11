@@ -23,14 +23,14 @@ print(f"local_u = {local_u}")
 deb = time()
 # Produit matrice-vecteur
 local_v = local_A.dot(local_u)
-print(f"local_v = {local_v}")
+
+
 
 v = np.empty(dim,dtype=local_v.dtype)
 comm.Allreduce(local_v,v)
+fin = time()
+print(f"local_v = {local_v}")
 print(f"v = {v}")
 
-fin = time()
+
 print(f"Temps du calcul est : {fin-deb}")
-# Normal 0.0004932880401611328
-#Column 0.0010089874267578125
-#Row 0.001424551010131836

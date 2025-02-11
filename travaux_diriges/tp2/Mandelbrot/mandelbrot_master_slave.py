@@ -11,8 +11,6 @@ global_com = MPI.COMM_WORLD.Dup()
 rank       = global_com.rank
 nbp        = global_com.size
 
-filename = f"Output{rank:03d}.txt"
-out      = open(filename, mode='w')
 
 @dataclass
 class MandelbrotSet:
@@ -81,7 +79,8 @@ if rank==0: # Maitre
         convergence[stat.Get_tag(),:] = row[:]
         req.wait(None)
     fin = time()
-    out.write(f"Temps de calcul mandelbrot pour le maitre : {fin-deb} secondes\n")    
+    print(f"Temps de calcul mandelbrot pour le maitre : {fin-deb}")
+
     # Constitution de l'image résultante :
     deb=time()
     image = Image.fromarray(np.uint8(matplotlib.cm.plasma(convergence)*255))
@@ -101,6 +100,4 @@ else: # Esclave
                 row[x] = mandelbrot_set.convergence(c,smooth=True)
             global_com.Send(row, 0, task)
     fin = time()
-    out.write(f"Temps de calcul mandelbrot pour esclave : {fin-deb} secondes\n")    
-
-out.close()
+    print(f"Temps de calcul mandelbrot pour esclave : {fin-deb}")    
