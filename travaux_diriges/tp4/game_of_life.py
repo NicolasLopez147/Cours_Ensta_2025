@@ -23,8 +23,6 @@ On itère ensuite pour étudier la façon dont évolue la population des cellule
 """
 import pygame  as pg
 import numpy   as np
-from mpi4py import MPI
-
 
 
 class Grille:
@@ -101,17 +99,8 @@ class App:
 if __name__ == '__main__':
     import time
     import sys
-    from mpi4py import MPI
 
-    comm = MPI.COMM_WORLD.Dup()
-    rank = comm.rank
-    size = comm.size
-    
-    if size != 2:
-        if rank == 0:
-            print("dos procesos")
-        sys.exit()
-    
+    pg.init()
     dico_patterns = { # Dimension et pattern dans un tuple
         'blinker' : ((5,5),[(2,1),(2,2),(2,3)]),
         'toad'    : ((6,6),[(2,2),(2,3),(2,4),(3,3),(3,4),(3,5)]),
@@ -129,60 +118,34 @@ if __name__ == '__main__':
         "flat" : ((200,400), [(80,200),(81,200),(82,200),(83,200),(84,200),(85,200),(86,200),(87,200), (89,200),(90,200),(91,200),(92,200),(93,200),(97,200),(98,200),(99,200),(106,200),(107,200),(108,200),(109,200),(110,200),(111,200),(112,200),(114,200),(115,200),(116,200),(117,200),(118,200)])
     }
     choice = 'glider'
+    if len(sys.argv) > 1 :
+        choice = sys.argv[1]
+    resx = 800
+    resy = 800
+    if len(sys.argv) > 3 :
+        resx = int(sys.argv[2])
+        resy = int(sys.argv[3])
+    print(f"Pattern initial choisi : {choice}")
+    print(f"resolution ecran : {resx,resy}")
+    try:
+        init_pattern = dico_patterns[choice]
+    except KeyError:
+        print("No such pattern. Available ones are:", dico_patterns.keys())
+        exit(1)
+    grid = Grille(*init_pattern)
+    appli = App((resx, resy), grid)
 
-    if rank == 0:
-
-        pg.init()    
-        if len(sys.argv) > 1 :
-            choice = sys.argv[1]
-        resx = 800
-        resy = 800
-        if len(sys.argv) > 3 :
-            resx = int(sys.argv[2])
-            resy = int(sys.argv[3])
-        print(f"Pattern initial choisi : {choice}")
-        print(f"resolution ecran : {resx,resy}")
-        try:
-            init_pattern = dico_patterns[choice]
-        except KeyError:
-            print("No such pattern. Available ones are:", dico_patterns.keys())
-            exit(1)
-        grid = Grille(*init_pattern)
-        appli = App((resx, resy), grid)
-
-    if rank == 1:
-        resx = 800
-        resy = 800
-        try:
-            init_pattern = dico_patterns[choice]
-        except KeyError:
-            print("No such pattern. Available ones are:", dico_patterns.keys())
-            exit(1)
-        grid = Grille(*init_pattern)
-        
     loop = True
     while loop:
         #time.sleep(0.1) # A régler ou commenter pour vitesse maxi
-        if rank == 1:
-            t1 = time.time()
-            diff = grid.compute_next_iteration()
-            t2 = time.time()
-            comm.Send(diff,dest = 0)
-            print(f"Temps calcul prochaine generation : {t2-t1:2.2e} secondes")
-        elif rank == 0:
-            comm.Recv(grid.cells,source=1)
-            appli.draw()
-            t3 = time.time()
-            for event in pg.event.get():
-                if event.type == pg.QUIT:
-                    loop = False
-            # print(f"Temps affichage : {t3-t2:2.2e} secondes\r", end='')
+        t1 = time.time()
+        diff = grid.compute_next_iteration()
+        t2 = time.time()
+        appli.draw()
+        t3 = time.time()
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                loop = False
+        print(f"Temps calcul prochaine generation : {t2-t1:2.2e} secondes, temps affichage : {t3-t2:2.2e} secondes\r", end='')
 
-if rank == 0:
-    pg.quit()
-
-
-# 1.Affichage / calcul
-# Descomposition du domain pour le adress plus grand
-# Descomposition du domain et aussi affichage et calcul
-# Asynchronique affiche // dos caminos un camino que calcule y el otro que muestre pero con la diferencia de que el calculo no espere a la pantalla sino que sea asyncronico 
+pg.quit()
