@@ -194,6 +194,8 @@ void display_params(ParamsType const& params)
 
 int main( int nargs, char* args[] )
 {
+    auto start = std::chrono::high_resolution_clock::now();
+
     auto params = parse_arguments(nargs-1, &args[1]);
     display_params(params);
     if (!check_params(params)) return EXIT_FAILURE;
@@ -209,7 +211,11 @@ int main( int nargs, char* args[] )
         displayer->update( simu.vegetal_map(), simu.fire_map() );
         if (SDL_PollEvent(&event) && event.type == SDL_QUIT)
             break;
-        std::this_thread::sleep_for(0.1s);
+        // std::this_thread::sleep_for(0.1s);
     }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
+    std::cout<< "Time execution: "<< time <<std::endl;
     return EXIT_SUCCESS;
 }
